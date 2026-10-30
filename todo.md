@@ -5,7 +5,7 @@ Scope, questions and expected output are in [README.md](README.md).
 
 ## 1. Predictions (11:15, 10 min)
 
-- [ ] Fill in the predictions table in the README: majority baseline, Laya accuracy and Jev accuracy for each question.
+- [x] Fill in the predictions table in the README: majority baseline, Laya accuracy and Jev accuracy for each question.
 
 Done when every cell has a number.
 Guess the baselines too, before looking at the class distribution.

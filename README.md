@@ -66,11 +66,22 @@ The sample is 100_000 English products with all three labels present, drawn with
 
 Fill these in before the first request is sent.
 
-| Question | Majority baseline | Laya accuracy | Jev accuracy |
+| Question | Baseline | Laya accuracy | Jev accuracy |
 | --- | --- | --- | --- |
-| `food_group` | | | |
-| `ultra_processed` | | | |
-| `nutriscore` | | | |
+| `food_group` | 22% | 60% | 70% |
+| `ultra_processed` | 70% | 65% | 80% |
+| `nutriscore` | 28% | 25% | 35% |
+
+Why these numbers:
+
+- `food_group`: sugary snacks should be the largest group in packaged English products, which are mostly US imports.
+  Laya is reported near chance zero-shot, but naming a food group from a product name is semantic enough to land well above the 11% of a random guess.
+  Jev should lose its points on taxonomy edges (composite foods vs cereals, salty vs sugary snacks), not on understanding.
+- `ultra_processed`: most packaged products are NOVA 4, so the baseline is high and hard to beat.
+  The label is a rule over ingredient markers, which a model approximates but does not replicate.
+  Laya also reads only 512 tokens, and the longest ingredient lists, with the additives at the end, are exactly the NOVA 4 ones.
+- `nutriscore`: the grade is a formula over numbers, a known weak spot for both systems, and only the exact grade counts.
+  Laya should land at or below the baseline, Jev slightly above it.
 
 ## Expected output
 
