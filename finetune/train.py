@@ -1,11 +1,11 @@
-"""Fine-tune Laya on the training data exported from the laptop, on the DGX Spark's GPU.
+"""Fine-tune Laya on the training data of `just ft-data`, on the DGX Spark's GPU; run from the repo root.
 
-    uv run python train.py check                                     # the GPU, the base checkpoint and the data
-    uv run python train.py train --run smoke --limit 256 --epochs 1  # every step on 256 products, and a time estimate
-    uv run python train.py train --run v1                            # the full run
+    just finetune check                                     # the GPU, the base checkpoint and the data
+    just finetune train --run smoke --limit 256 --epochs 1  # every step on 256 products, and a time estimate
+    just finetune train --run v1                            # the full run
 
 A run writes `out/<run>/`, the checkpoint `laya.load` reads, with `run.json` and `train.log` beside it, and packs it
-into `out/<run>.tar` with a `.sha256`, for the trip back to the laptop.
+into `out/<run>.tar` with a `.sha256`, which `just ft-install` unpacks for `just laya-ft`.
 """
 
 import argparse
@@ -24,9 +24,9 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 OUT = HERE / "out"
-LAYA_VERSION = "0.4.18"  # the release the laptop serves the checkpoint with
+LAYA_VERSION = "0.4.18"  # the release `just laya-ft` serves the checkpoint with
 BASE_REPO = "convaiinnovations/laya"
-BASE_REVISION = "7b928d828b7b0e022f929d9bd2e44165aa270148"  # the English checkpoint the laptop's Laya serves
+BASE_REVISION = "7b928d828b7b0e022f929d9bd2e44165aa270148"  # the English checkpoint `just laya` serves
 WEIGHTS = "model.safetensors"
 
 
@@ -58,14 +58,16 @@ def training_data() -> dict:
     """The manifest of the exported data, after checking the data is the file it describes."""
     manifest = json.loads((DATA / "manifest.json").read_text())
     if sha256(DATA / "train.jsonl") != manifest["train_sha256"]:
-        raise SystemExit("data/train.jsonl does not match data/manifest.json: copy both from the laptop again")
+        raise SystemExit(
+            "finetune/data/train.jsonl does not match its manifest.json: export both again with `just ft-data`"
+        )
     return manifest
 
 
 def check_laya() -> None:
     installed = importlib.metadata.version("laya")
     if installed != LAYA_VERSION:
-        raise SystemExit(f"laya {installed} is installed, but the laptop serves {LAYA_VERSION}")
+        raise SystemExit(f"laya {installed} is installed, but `just laya` serves {LAYA_VERSION}")
 
 
 def check(args: argparse.Namespace) -> None:
@@ -148,11 +150,11 @@ def train(args: argparse.Namespace) -> None:
     config = laya_train.TrainConfig(
         epochs=args.epochs,
         micro_batch=args.micro_batch,
-        grad_accum=args.grad_accum,  # 32 x 2 by default: the effective batch of 64 Laya publishes
+        grad_accum=args.grad_accum,  # 8 x 8 by default, Laya's own: an effective batch of 64
         loss="soft-ce",  # Laya measured no gain from the RL term on typed decisions (#741 in its repo)
         shuffle_options=("choice",),  # food_group options in a new random order every epoch: no position prior
         calib_max=1500,  # held out from training to fit the temperatures: about 500 per question instead of 133
-        gradient_checkpointing=False,  # memory is plenty on the Spark, so do not trade speed for it
+        gradient_checkpointing=False,  # faster; 8 x 8 fits beside the Spark's vLLM servers without it
         seed=0,
     )
 
@@ -266,8 +268,8 @@ def main() -> None:
         if name == "train":
             command.add_argument("--run", required=True, help="the folder under out/, for example v1")
             command.add_argument("--epochs", type=int, default=4, help="default 4, as Laya's published recipe")
-            command.add_argument("--micro-batch", type=int, default=32, help="items per forward pass (default 32)")
-            command.add_argument("--grad-accum", type=int, default=2, help="micro batches per update (default 2)")
+            command.add_argument("--micro-batch", type=int, default=8, help="items per forward pass (default 8)")
+            command.add_argument("--grad-accum", type=int, default=8, help="micro batches per update (default 8)")
             command.add_argument("--limit", type=int, help="only the first N products, for a short trial run")
     args = parser.parse_args()
     if args.command == "check":

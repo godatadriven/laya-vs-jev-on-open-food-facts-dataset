@@ -22,8 +22,10 @@ def main() -> None:
     results = commands.add_parser("build", help="turn a run's raw logs into results.parquet")
     results.add_argument("--run", default="full", help="the folder under data/runs (default: full)")
 
-    commands.add_parser("export-training", help="write the calibration split to finetune/data/ for the Spark")
-    install = commands.add_parser("install-checkpoint", help="check and unpack a checkpoint archive from the Spark")
+    commands.add_parser("export-training", help="write the calibration split to finetune/data/, the training data")
+    install = commands.add_parser(
+        "install-checkpoint", help="check and unpack a checkpoint archive from finetune/train.py"
+    )
     install.add_argument("archive", type=Path, help="out/<run>.tar, with its .sha256 beside it")
 
     args = parser.parse_args()

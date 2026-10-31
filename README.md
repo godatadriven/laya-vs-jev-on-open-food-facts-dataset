@@ -51,7 +51,7 @@ The sample is 100_000 English products with all three labels present, drawn with
 Laya's documentation says its base checkpoints need fine-tuning on domain data, so the comparison has a third system, `laya-ft`.
 
 - It is the same English checkpoint, fine-tuned on the 10_000 calibration products with Laya's own training code, on an NVIDIA DGX Spark: see [finetune/](finetune/README.md).
-- It runs on the laptop like the published checkpoint, and answers the same evaluation products with the same questions.
+- It is served like the published checkpoint, by the same `laya-serve`, and answers the same evaluation products with the same questions.
 - Its temperatures are fitted during training, on 1_500 calibration items held out from it.
 - 15.1% of the evaluation products have the exact name of a calibration product, so its accuracy is also reported for those products and for the rest apart.
 
@@ -63,6 +63,8 @@ Laya's documentation says its base checkpoints need fine-tuning on domain data, 
 - Calibration: reliability of Laya's confidence before and after temperature fitting, and Jev's as shipped.
 - Accuracy against coverage for Laya: how accurate it is on the share of rows it is most confident about.
 - Throughput and cost: rows per second for Laya on an M3 Pro laptop, latency and € per million rows for Jev from measured token counts.
+  The laptop's speed is measured on the 1_024 products of the first look; the full Laya runs are answered on the DGX Spark, to finish in time.
+- How far the Spark's answers are from the laptop's, on those 1_024 products, so the change of device is measured rather than assumed away.
 
 ### Out of scope
 
@@ -116,7 +118,7 @@ Pinned on 31 October 2026:
 
 | System | Version | Read from |
 | --- | --- | --- |
-| Laya | `laya 0.4.18`, English checkpoint revision `7b928d8`, on MPS | `/health` of the local server |
+| Laya | `laya 0.4.18`, English checkpoint revision `7b928d8`, on MPS on the laptop and CUDA on the DGX Spark for the full runs | `/health` of the server |
 | Jev | `jev-1.14.0` | the `model` field of a `jev-latest` response; `jev-latest` was released on 22 October 2026 |
 | Laya fine-tuned | `laya 0.4.18, laya-ft@` and the first 7 characters of its weights' SHA-256, known after training | the weights the harness serves; a local checkpoint has no commit |
 
@@ -128,6 +130,7 @@ Differences that matter for the analysis:
 - Laya's `model` field says `laya-rl-agent`, so its `model_version` comes from `/health`.
 - Jev only accepts `choice` options as a dictionary of descriptions; Laya also accepts a plain list.
 - Laya answers about 5 products per second on the M3 Pro, so a full run of 100_000 takes about 5.5 hours; batching barely helps.
+  The full runs of Laya and `laya-ft` are therefore answered on the DGX Spark, with the same locked versions, checkpoints, questions and batches.
 
 Every check above can be re-run, and tried on other products, in [systems-check.ipynb](notebooks/systems-check.ipynb).
 
@@ -144,8 +147,9 @@ The code that sends the sample to both systems is in [harness/](harness/).
 - A failed request is retried with backoff; a product that still fails keeps its rows in the results, with the error.
 - The strict Laya server does not report truncation, so the harness counts it with Laya's own code and tokenizer; the count matches a non-strict Laya exactly.
 
-`just run laya` and `just run jev` start the full runs, about 5.6 and 2.8 hours, and can run at the same time.
-`just run laya-ft full --split evaluation` adds the fine-tuned Laya once it is trained; it shares the laptop's GPU, so it runs after `just run laya`, not beside it.
+`just run jev` starts Jev's full run from the laptop, about 2.8 hours.
+`just run laya` and `just run laya-ft full --split evaluation` run on the DGX Spark, next to its own Laya servers, and `just spark-pull` copies their raw logs back, as [finetune/README.md](finetune/README.md) describes.
+On the laptop's Laya the same commands would take about 5.5 hours each.
 `just build` then writes `data/runs/full/results.parquet`, one row per product, system and question:
 
 | Column | Holds |
@@ -154,7 +158,7 @@ The code that sends the sample to both systems is in [harness/](harness/).
 | `system`, `model_version` | `laya 0.4.18, english@7b928d8`, `jev-1.14.0` or `laya 0.4.18, laya-ft@<digest>` |
 | `question`, `answer` | the question, and its most likely option |
 | `probs` | the probability of every option |
-| `latency_ms` | per product; a Laya batch call's time is shared by its products |
+| `latency_ms` | per product; a Laya batch call's time is shared by its products, and in the full run it is the DGX Spark's |
 | `input_tokens` | per product, counted by each system's own tokenizer |
 | `truncated`, `state_tokens_dropped` | Laya only: the state did not fit next to this question |
 | `attempts`, `error` | the attempts a product took, and the error if it never got an answer |

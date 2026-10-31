@@ -52,7 +52,7 @@ Done when the 20-row dry run produces the same columns for both systems.
 
 ## 5. Runs (14:00, 1 h)
 
-- [ ] Laya on all 100_000 rows. Record wall-clock time and rows per second.
+- [ ] Laya on all 100_000 rows, on the DGX Spark (`just run laya` there, as [finetune/README.md](finetune/README.md) describes). Record wall-clock time and rows per second; the laptop's rows per second come from the first look.
 - [ ] Jev on all 100_000 rows. Record latency p50 and p95, and input tokens per row.
 - [ ] Count failed requests and rows with a truncated state, and keep them in the results instead of silently dropping them.
 
@@ -86,11 +86,13 @@ How it works is in [finetune/README.md](finetune/README.md).
 
 - [ ] Fill in the `laya-ft` column of the predictions table in the README, before the training run starts.
 - [x] Export the calibration split as training data: `just ft-data`.
-- [ ] Copy the bundle to the DGX Spark with `just ft-push spark`, then `uv sync --locked` and `uv run python train.py check` there.
-- [ ] Smoke run on 256 products, and note the time per epoch it predicts.
-- [ ] Full run, `uv run python train.py train --run v1`, in `tmux`. Record the time per epoch, items per second and peak memory from `run.json`.
-- [ ] Copy it back and install it: `just ft-pull spark v1`, `just ft-install v1`.
-- [ ] After the Laya run has finished: `just laya-ft`, then `just run laya-ft full --split evaluation` and `just build`.
+- [x] Copy the training code and data to the DGX Spark, and check its GPU there.
+- [x] Smoke run on 256 products: 18.1 items per second, about 26 min per epoch.
+- [ ] Full run, `just finetune train --run v1`, in `tmux`. Record the time per epoch, items per second and peak memory from `run.json`.
+- [ ] Copy the repo to the Spark with `just spark-push spark almaz/laya-vs-jev`, then `uv sync --locked` and `just ft-install v1` there.
+- [ ] On the Spark, `just laya` and `just laya-ft`, then `just run laya` and `just run laya-ft full --split evaluation`.
+- [ ] On the laptop, `just spark-pull spark almaz/laya-vs-jev`, `just ft-install v1` and `just build`.
+- [ ] Compare the Spark's Laya answers with the laptop's on the 1_024 products of the first look.
 - [ ] Accuracy of `laya-ft` per question next to Laya and Jev, for products whose name is in the calibration split and for the rest.
 
 Done when `results.parquet` has `laya-ft` answers for the 90_000 evaluation products.

@@ -1,8 +1,8 @@
-"""Fine-tuning Laya on the DGX Spark: the training data that goes there, and the checkpoint that comes back.
+"""Fine-tuning Laya: the training data for `finetune/train.py`, and the checkpoint it packs.
 
-`export` writes the calibration split as the JSONL rows `laya.train` reads, into `finetune/data/`, the
-folder that is copied to the Spark. `install` checks a checkpoint archive that came back and unpacks it
-to `data/checkpoints/laya-ft/`, where `just laya-ft` serves it from.
+`export` writes the calibration split as the JSONL rows `laya.train` reads, into `finetune/data/`.
+`install` checks a packed checkpoint and unpacks it to `data/checkpoints/laya-ft/`, where `just laya-ft`
+serves it from.
 """
 
 import datetime as dt
@@ -42,7 +42,7 @@ def expected(food_group: str, ultra_processed: bool, nutriscore: str) -> dict:
 
 
 def export(split: str = "calibration") -> Path:
-    """Write the products of `split` to `finetune/data/train.jsonl`, with a manifest the Spark checks it against."""
+    """Write the products of `split` to `finetune/data/train.jsonl`, with a manifest `train.py` checks it against."""
     rows = (
         duckdb.connect()
         .execute(
@@ -71,7 +71,7 @@ def export(split: str = "calibration") -> Path:
 
 
 def install(archive: Path) -> Path:
-    """Check a checkpoint archive from the Spark against its `.sha256` and the questions, then unpack it."""
+    """Check a checkpoint archive against its `.sha256` and the questions, then unpack it."""
     archive = archive.resolve()
     recorded = archive.with_name(archive.name + ".sha256").read_text().split()[0]
     if sha256(archive) != recorded:
@@ -92,7 +92,7 @@ def install(archive: Path) -> Path:
     if run["data"]["questions_sha256"] != questions_sha256(QUESTIONS):
         raise RuntimeError("the checkpoint was trained on data exported with other questions")
     if sha256(unpacked / WEIGHTS) != run["weights_sha256"]:
-        raise RuntimeError(f"{WEIGHTS} does not match the digest the Spark recorded")
+        raise RuntimeError(f"{WEIGHTS} does not match the digest its training run recorded")
 
     CHECKPOINT.parent.mkdir(parents=True, exist_ok=True)
     unpacked.rename(CHECKPOINT)

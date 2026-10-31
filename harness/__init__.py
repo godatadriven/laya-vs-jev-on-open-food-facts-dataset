@@ -4,5 +4,5 @@
 - `client`: one client for the `/v1/systemone` protocol, used for both systems.
 - `runs`: resumable runs with raw logs, and the results table built from them.
 - `truncation`: how many state tokens Laya cuts, which the strict server does not report.
-- `training`: the training data for fine-tuning Laya on the DGX Spark, and installing the checkpoint it returns.
+- `training`: the training data for fine-tuning Laya, and installing the checkpoint that training packs.
 """

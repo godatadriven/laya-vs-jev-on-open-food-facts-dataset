@@ -49,7 +49,7 @@ class System:
     per_minute: float | None = None  # cap on request starts, retries included
     max_attempts: int = 6
     backoff_s: float = 1.0
-    laya: bool = False  # served by a local Laya, which reports its device and checkpoint on /health
+    laya: bool = False  # served by Laya, which reports its device and checkpoint on /health
     checkpoint: Path | None = None  # a local checkpoint that Laya serves under `model`, instead of a published one
 
     @property
@@ -133,10 +133,12 @@ async def resolve_version(system: System, client: SystemOne) -> tuple[str, str |
     if not system.laya:
         return system.model, None, None  # pinned by name; every response is checked against it
     health = await client.get("/health")
-    if health["device"] != "mps":
-        raise RuntimeError(f"Laya runs on {health['device']}, not mps; its speed would not be the laptop's")
+    if health["device"] == "cpu":  # every invocation keeps /health, so the device of each answer is on record
+        raise RuntimeError(f"the Laya on {system.base_url} fell back to the CPU")
     if system.model not in health["loaded"]:
         raise RuntimeError(f"the Laya on {system.base_url} does not serve {system.model}")
+    if system.checkpoint and not (system.checkpoint / WEIGHTS).exists():
+        raise RuntimeError(f"no checkpoint in {system.checkpoint.relative_to(ROOT)}: install it with `just ft-install`")
     revision = sha256(system.checkpoint / WEIGHTS) if system.checkpoint else health["revisions"][system.model]
     return f"laya {LAYA_VERSION}, {system.model}@{revision[:7]}", revision, health
 

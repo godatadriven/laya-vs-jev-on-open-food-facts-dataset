@@ -4,4 +4,3 @@ food.parquet
 .env
 /finetune/data/
 /finetune/out/
-/finetune/.venv/
