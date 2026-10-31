@@ -35,7 +35,7 @@ If they turn out to be valuable, we want to be among the early adopters, with ou
 
 The sample is 100_000 English products with all three labels present, drawn with a fixed seed:
 
-- rows 1-10_000 are the calibration split, used to fit Laya's temperature;
+- rows 1-10_000 are the calibration split, used to fit Laya's temperature and to fine-tune Laya;
 - rows 10_001-100_000 are the evaluation split, where every reported number comes from.
 
 ### Three questions, one request per product
@@ -46,9 +46,19 @@ The sample is 100_000 English products with all three labels present, drawn with
 | `ultra_processed` | `noul` | `nova_group == 4` | NOVA in Open Food Facts is computed by rules from ingredients, so this is "model vs regex" |
 | `nutriscore` | `score` | `nutriscore_grade`, `A` to `E` | Expected to fail: the grade is a function of numbers, a known weak spot. It shows where the boundary is |
 
+### A third system: Laya fine-tuned
+
+Laya's documentation says its base checkpoints need fine-tuning on domain data, so the comparison has a third system, `laya-ft`.
+
+- It is the same English checkpoint, fine-tuned on the 10_000 calibration products with Laya's own training code, on an NVIDIA DGX Spark: see [finetune/](finetune/README.md).
+- It runs on the laptop like the published checkpoint, and answers the same evaluation products with the same questions.
+- Its temperatures are fitted during training, on 1_500 calibration items held out from it.
+- 15.1% of the evaluation products have the exact name of a calibration product, so its accuracy is also reported for those products and for the rest apart.
+
 ### What is measured
 
 - Accuracy per question and per system on the evaluation split, next to the majority-class baseline.
+- What fine-tuning changes: Laya against `laya-ft`, for products whose name was trained on and for the rest.
 - Where Laya and Jev disagree, and examples of each kind of disagreement.
 - Calibration: reliability of Laya's confidence before and after temperature fitting, and Jev's as shipped.
 - Accuracy against coverage for Laya: how accurate it is on the share of rows it is most confident about.
@@ -57,7 +67,7 @@ The sample is 100_000 English products with all three labels present, drawn with
 ### Out of scope
 
 - Generative LLM baselines, Strands Decider, Clef and the OpenAI Decisions API.
-- Fine-tuning Laya.
+- Tuning the fine-tuning: `laya-ft` is one run with Laya's published recipe, not a search over settings.
 - The multilingual checkpoint and non-English products.
 - Any cloud, Kubernetes or table-format work: that is the Innovation Project, not the day.
 - Publishing Jev numbers outside Xebia until TypeSafe's terms on benchmarks are read.
@@ -65,12 +75,13 @@ The sample is 100_000 English products with all three labels present, drawn with
 ## Predictions, written before the runs
 
 Fill these in before the first request is sent.
+The `laya-ft` column was added on 31 October, after the first look at 1_024 calibration products; it is filled in before the training run starts.
 
-| Question | Baseline | Laya accuracy | Jev accuracy |
-| --- | --- | --- | --- |
-| `food_group` | 22% | 60% | 70% |
-| `ultra_processed` | 70% | 65% | 80% |
-| `nutriscore` | 28% | 25% | 35% |
+| Question | Baseline | Laya accuracy | Jev accuracy | `laya-ft` accuracy |
+| --- | --- | --- | --- | --- |
+| `food_group` | 22% | 60% | 70% | 72% |
+| `ultra_processed` | 70% | 65% | 80% | 82% |
+| `nutriscore` | 28% | 25% | 35% | 40% |
 
 Why these numbers:
 
@@ -83,11 +94,85 @@ Why these numbers:
 - `nutriscore`: the grade is a formula over numbers, a known weak spot for both systems, and only the exact grade counts.
   Laya should land at or below the baseline, Jev slightly above it.
 
+## The sample
+
+274_159 products pass the filter; the sample is 100_000 of them, drawn with the seed `laya-vs-jev-2026-10-30`.
+How it is built and checked is in [data-sampling.ipynb](notebooks/data-sampling.ipynb).
+
+Majority baselines, measured on the evaluation split (90_000 rows):
+
+| Question | Majority answer | Baseline | Predicted |
+| --- | --- | --- | --- |
+| `food_group` | sugary snacks | 23.3% | 22% |
+| `ultra_processed` | yes (NOVA 4) | 67.0% | 70% |
+| `nutriscore` | E | 30.8% | 28% |
+
+- 10 level-1 food groups remain, not 9: alcoholic beverages has only 3 evaluation rows, too few to score, and is reported as such.
+- Baby foods and milks does not survive the filter at all.
+
+## Systems under test
+
+Pinned on 31 October 2026:
+
+| System | Version | Read from |
+| --- | --- | --- |
+| Laya | `laya 0.4.18`, English checkpoint revision `7b928d8`, on MPS | `/health` of the local server |
+| Jev | `jev-1.14.0` | the `model` field of a `jev-latest` response; `jev-latest` was released on 22 October 2026 |
+| Laya fine-tuned | `laya 0.4.18, laya-ft@` and the first 7 characters of its weights' SHA-256, known after training | the weights the harness serves; a local checkpoint has no commit |
+
+Both answer [request.json](request.json) with the same response shape: the same answer types, field names and `usage` block.
+Differences that matter for the analysis:
+
+- Jev returns probabilities with 2 decimals, Laya with 4, so Jev's confidence comes in coarse steps and many rows tie at 1.0.
+- Each system counts input tokens with its own tokenizer (866 for Jev, 671 for Laya on `request.json`), so the counts are not comparable between them.
+- Laya's `model` field says `laya-rl-agent`, so its `model_version` comes from `/health`.
+- Jev only accepts `choice` options as a dictionary of descriptions; Laya also accepts a plain list.
+- Laya answers about 5 products per second on the M3 Pro, so a full run of 100_000 takes about 5.5 hours; batching barely helps.
+
+Every check above can be re-run, and tried on other products, in [systems-check.ipynb](notebooks/systems-check.ipynb).
+
+## Harness
+
+The code that sends the sample to both systems is in [harness/](harness/).
+[harness-check.ipynb](notebooks/harness-check.ipynb) checks it on a 20-row dry run per system.
+
+- Both systems get the questions from [request.json](request.json) through one client; only the base URL, the model and the API key differ.
+- Laya goes through `/v1/systemone/batch`, 64 states per call, sorted by length into passes of 16.
+- Jev goes through `/v1/systemone`, with 4 requests in flight and at most 600 per minute, half its published limit.
+- Every response is appended to a raw log under `data/runs/<run>/` as it arrives, so a stopped run continues where it stopped and the analysis never needs a second call.
+- A run is pinned to its model version, route, batch settings, questions and rows, and refuses to continue with any of them changed.
+- A failed request is retried with backoff; a product that still fails keeps its rows in the results, with the error.
+- The strict Laya server does not report truncation, so the harness counts it with Laya's own code and tokenizer; the count matches a non-strict Laya exactly.
+
+`just run laya` and `just run jev` start the full runs, about 5.6 and 2.8 hours, and can run at the same time.
+`just run laya-ft full --split evaluation` adds the fine-tuned Laya once it is trained; it shares the laptop's GPU, so it runs after `just run laya`, not beside it.
+`just build` then writes `data/runs/full/results.parquet`, one row per product, system and question:
+
+| Column | Holds |
+| --- | --- |
+| `id`, `split` | the sample row |
+| `system`, `model_version` | `laya 0.4.18, english@7b928d8`, `jev-1.14.0` or `laya 0.4.18, laya-ft@<digest>` |
+| `question`, `answer` | the question, and its most likely option |
+| `probs` | the probability of every option |
+| `latency_ms` | per product; a Laya batch call's time is shared by its products |
+| `input_tokens` | per product, counted by each system's own tokenizer |
+| `truncated`, `state_tokens_dropped` | Laya only: the state did not fit next to this question |
+| `attempts`, `error` | the attempts a product took, and the error if it never got an answer |
+
+Truncation depends only on the input, so it is known before the runs.
+On the evaluation split Laya cuts 2.8% of the states for `food_group`, which leaves the state 329 tokens, and 0.9% and 0.8% for `nutriscore` and `ultra_processed`.
+99% of the cut states are NOVA 4.
+
+## First look
+
+Before the full runs, [first-look.ipynb](notebooks/first-look.ipynb) explains the baselines and the first differences between Laya and Jev, on the first 1_024 calibration products.
+Its numbers are not results: those come from the evaluation split.
+
 ## Expected output
 
 By the end of the day this folder holds:
 
-1. **The results table**: accuracy per question for Laya, Jev, plus Laya rows per second and Jev € per million rows.
+1. **The results table**: accuracy per question for Laya, `laya-ft` and Jev, plus Laya rows per second and Jev € per million rows.
 2. **One chart**: Laya accuracy against coverage.
 3. **Three failure modes**, each with real rows from the sample as examples.
 4. **Predictions against results**: where the guesses above were wrong, and by how much.

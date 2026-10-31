@@ -1,0 +1,40 @@
+{
+  "state": "Product: Gourmet Swiss Style Yogurt\nIngredients: Cultured pasteurized grade a fat free milk, milk, solids, live & active cultures: bifidus, bulgaricus & thermophilus, cane sugar, mango puree, tapioca starch, pectin, vitamins & minerals added. (no preservatives).\nNutrition per 100 g: energy 76 kcal, fat 0 g, saturated fat 0 g, sugars 13.53 g, salt 0.14 g, fibre 0 g, proteins 3.53 g",
+  "questions": {
+    "food_group": {
+      "type": "choice",
+      "instructions": "Which food group does this product belong to?",
+      "criteria": {
+        "alcoholic beverages": "beer, wine, cider, spirits and other drinks with alcohol",
+        "beverages": "non-alcoholic drinks: sodas, juices and nectars, waters, teas and coffees, plant-based milk substitutes",
+        "cereals and potatoes": "bread, breakfast cereals, pasta, rice and other cereals, legumes and potatoes",
+        "composite foods": "ready meals, pizzas, pies, quiches and sandwiches",
+        "fats and sauces": "dressings and sauces, oils, butter, margarine and other fats",
+        "fish, meat and eggs": "meat, processed meat, fish and seafood, eggs",
+        "fruits and vegetables": "fruits, vegetables, dried fruits and soups",
+        "milk and dairy products": "milk, yogurt, cheese, dairy desserts and ice cream",
+        "salty snacks": "crisps, crackers and other appetizers, nuts, salty and fatty snacks",
+        "sugary snacks": "sweets, chocolate, biscuits, cakes and pastries"
+      }
+    },
+    "ultra_processed": {
+      "type": "noul",
+      "instructions": "Is this product ultra-processed, NOVA group 4?",
+      "criteria": {
+        "true": "ultra-processed: an industrial formulation with additives such as flavourings, colours, emulsifiers or sweeteners",
+        "false": "not ultra-processed: unprocessed, minimally processed, a culinary ingredient or a simply processed food"
+      }
+    },
+    "nutriscore": {
+      "type": "score",
+      "instructions": "What is the Nutri-Score of this product, from A (best nutritional quality) to E (worst)?",
+      "criteria": [
+        "A: best nutritional quality",
+        "B: good nutritional quality",
+        "C: average nutritional quality",
+        "D: poor nutritional quality",
+        "E: worst nutritional quality"
+      ]
+    }
+  }
+}

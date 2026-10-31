@@ -1,3 +1,7 @@
 food.parquet
 /data/
 .ipynb_checkpoints/
+.env
+/finetune/data/
+/finetune/out/
+/finetune/.venv/

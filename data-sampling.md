@@ -2,7 +2,7 @@
 
 How to turn the local `food.parquet` into `data/sample.parquet`: the 100_000 English products described in the [README](README.md), split into calibration and evaluation rows.
 This is step 2 of [todo.md](todo.md).
-The same steps with charts, for the demo, are in [data-sampling.ipynb](data-sampling.ipynb).
+The same steps with charts, for the demo, are in [data-sampling.ipynb](notebooks/data-sampling.ipynb).
 
 Everything runs in one DuckDB session. The expected numbers below come from the export downloaded on 30 October 2026 (4_884_051 products).
 

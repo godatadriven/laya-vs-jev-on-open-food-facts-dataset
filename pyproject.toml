@@ -6,8 +6,12 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "duckdb>=2.0.0",
+    "httpx>=0.28.1",
+    "laya==0.4.18",
     "matplotlib>=3.11.2",
     "pandas>=3.1.0",
+    "pyarrow>=26.0.0",
+    "python-dotenv>=1.2.4",
 ]
 
 [dependency-groups]
@@ -15,3 +19,18 @@ dev = [
     "ipykernel>=7.4.0",
     "jupyterlab>=4.6.5",
 ]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+# Installed into .venv in editable mode, so `import harness` works from notebooks/ and anywhere else
+[tool.hatch.build.targets.wheel]
+packages = ["harness"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint.isort]
+# duckdb/ holds SQL files, not a package; the import is the installed duckdb
+known-third-party = ["duckdb"]
