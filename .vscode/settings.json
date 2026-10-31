@@ -1,0 +1,18 @@
+{
+    "workbench.editorAssociations": {
+        "*.copilotmd": "vscode.markdown.preview.editor",
+        "*.parquet": "duckdb.dataFileViewer",
+        "*.csv": "duckdb.dataFileViewer",
+        "*.tsv": "duckdb.dataFileViewer",
+        "*.xlsx": "duckdb.dataFileViewer"
+    },
+    "duckdb.databases": [
+        {
+            "alias": "open_food_fact",
+            "type": "file",
+            "path": "/Users/almaz/Desktop/PROJECTS/Xebia/innovation-days/2026-10-30/open_food_fact.duckdb",
+            "attached": true
+        }
+    ],
+    "duckdb.defaultDatabase": "open_food_fact"
+}

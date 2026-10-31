@@ -1,0 +1,17 @@
+[project]
+name = "2026-10-30"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "duckdb>=2.0.0",
+    "matplotlib>=3.11.2",
+    "pandas>=3.1.0",
+]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "jupyterlab>=4.6.5",
+]
