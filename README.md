@@ -172,6 +172,65 @@ On the evaluation split Laya cuts 2.8% of the states for `food_group`, which lea
 Before the full runs, [first-look.ipynb](notebooks/first-look.ipynb) explains the baselines and the first differences between Laya and Jev, on the first 1_024 calibration products.
 Its numbers are not results: those come from the evaluation split.
 
+## Results
+
+[results.ipynb](notebooks/results.ipynb) computes every number below from the 90_000 products of the evaluation split; the calibration split only fits Laya's temperature.
+No product failed, so every accuracy is over all 90_000 of them.
+The Jev numbers stay inside Xebia until TypeSafe's terms on publishing benchmarks have been read.
+
+| Question | Majority baseline | Laya | `laya-ft` | Jev |
+| --- | --- | --- | --- | --- |
+| `food_group` | 23.3% | 52.9% | **89.2%** | 86.9% |
+| `ultra_processed` | 67.0% | 62.6% | **97.6%** | 89.8% |
+| `nutriscore` | 30.8% | 11.4% | **81.5%** | 51.8% |
+
+| | Laya | `laya-ft` | Jev |
+| --- | --- | --- | --- |
+| Products per second | 5.0 on the M3 Pro laptop, 25.2 on the DGX Spark | 25.1 on the DGX Spark | 9.7, the harness's own cap of 600 requests a minute |
+| A million products | 56 hours of the laptop, or 11 of the Spark | 11 hours of the Spark | €33 ($37) in input tokens |
+
+- **Fine-tuning decides it.**
+  `laya-ft` is the most accurate system on all three questions, 2.3, 7.8 and 29.7 points ahead of Jev.
+- **It learned the task, not the products.**
+  On the 76_413 evaluation products whose name it never saw, it is still ahead of Jev on all three questions.
+  Beyond what Jev also gains on the other 15.1%, having seen a name adds at most 0.4 points to its overall accuracy.
+- **Laya as published does not answer these questions.**
+  It is below the majority baseline on `ultra_processed` and `nutriscore`, and answers B for 91% of the `nutriscore` products.
+  Its `nutriscore` probabilities carry no information: fitted on the calibration split, its temperature runs off towards infinity, and Laya caps it at 5.
+- **Confidence.**
+  `laya-ft`'s confidence is the most honest on all three questions, with a calibration error (ECE) of 0.023, 0.008 and 0.033.
+  Jev is over-confident on `food_group`, 95% sure on average and right 87% of the time, and on `nutriscore`, 63% against 52%.
+  Fitting Laya's temperature brings its calibration error on `ultra_processed` from 0.101 to 0.030.
+- **Cut states.**
+  The nutrition line comes last in every state, so it is the first thing Laya's 512 tokens leave out.
+  On the 798 products whose state is cut for `nutriscore`, `laya-ft` falls from 81.7% to 56.6%, below Jev's 61.2% on the same products.
+- **The device.**
+  On the 1_024 products of the first look, sent in the same batches, the DGX Spark changes 18, 8 and 2 of the laptop's answers, and accuracy by at most 0.4 points.
+- **Jev's cost** is its 888 input tokens per product at $0.042 per million, output tokens being free, converted at the ECB rate of 30 October 2026.
+  The bill for every Jev request of the experiment, 102_068 products with the dry runs and the first look, was $3.78, within 1% of what the token counts in the responses predict at that price.
+  Its latency per request is 162 ms at the median and 238 ms at p95.
+
+![Accuracy against coverage for Laya, laya-ft and Jev, per question](notebooks/figures/accuracy-against-coverage.png)
+
+A system can answer only the products it is surest about and leave the rest: the share it answers is the coverage.
+On its surest quarter of food groups Laya as published is right 82% of the time, still below Jev's 87% on all of them.
+On their surest three quarters, `laya-ft` is right 96.8% of the time on `food_group` and Jev 94.5%.
+
+### Against the predictions
+
+Measured minus predicted accuracy, in points:
+
+| Question | Majority baseline | Laya | `laya-ft` | Jev |
+| --- | --- | --- | --- | --- |
+| `food_group` | +1.3 | -7.1 | +17.2 | +16.9 |
+| `ultra_processed` | -3.0 | -2.4 | +15.6 | +9.8 |
+| `nutriscore` | +2.8 | -13.6 | +41.5 | +16.8 |
+
+- The baselines were guessed within 3 points.
+- Laya as published did worse than predicted on every question, most on `nutriscore`, where it was expected near the baseline and landed below a random guess.
+- Jev and `laya-ft` did far better than predicted everywhere.
+  The largest miss is `laya-ft` on `nutriscore`, predicted 40% and measured 81.5%: the grade is a formula over the nutrition numbers, and fine-tuning taught Laya to read them.
+
 ## Expected output
 
 By the end of the day this folder holds:

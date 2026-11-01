@@ -67,21 +67,23 @@ Done when both result files have 100_000 products times 3 questions.
 
 All reported numbers come from the evaluation split.
 
-- [ ] Accuracy per question for both systems, next to the majority baseline.
-- [ ] Confusion matrix for `food_group`, for both systems.
-- [ ] Agreement between Laya and Jev per question, and 10 disagreements read by eye.
-- [ ] Laya calibration: fit the temperature on the calibration split, then compare the reliability before and after on the evaluation split. Laya ships `laya/calibrate.py` for this. Jev's reliability as it comes.
-- [ ] Laya accuracy against coverage: sort by confidence and plot accuracy on the top share of rows.
-- [ ] Cost: € per million rows for Jev from the measured input tokens.
+- [x] Accuracy per question for both systems, next to the majority baseline.
+- [x] Confusion matrix for `food_group`, for both systems.
+- [x] Agreement between Laya and Jev per question, and 10 disagreements read by eye.
+- [x] Laya calibration: fit the temperature on the calibration split, then compare the reliability before and after on the evaluation split. Laya ships `laya/calibrate.py` for this. Jev's reliability as it comes.
+- [x] Laya accuracy against coverage: sort by confidence and plot accuracy on the top share of rows.
+- [x] Cost: € per million rows for Jev from the measured input tokens.
+
+All of it is in [results.ipynb](notebooks/results.ipynb), for all three systems.
 
 Done when the results table in the README can be filled in.
 
 ## 7. Write-up (16:30, 1 h)
 
-- [ ] Fill in the results table in the README.
-- [ ] Add the accuracy-against-coverage chart.
+- [x] Fill in the results table in the README.
+- [x] Add the accuracy-against-coverage chart.
 - [ ] Write three failure modes, each with real rows from the sample.
-- [ ] Put the predictions next to the results and say where they were wrong.
+- [x] Put the predictions next to the results and say where they were wrong.
 
 Done when someone who was not here today can read the README and know what was found.
 
@@ -103,7 +105,7 @@ How it works is in [finetune/README.md](finetune/README.md).
 - [x] Compare the Spark's Laya answers with the laptop's on the 1_024 products of the first look.
   Same batches, so only the device differs: 18 `food_group`, 8 `ultra_processed` and 2 `nutriscore` answers change, and no probability moves by more than 0.09.
   The laptop is right on 6 of the changed `food_group` answers and the Spark on 2; the same for `ultra_processed`.
-- [ ] Accuracy of `laya-ft` per question next to Laya and Jev, for products whose name is in the calibration split and for the rest.
+- [x] Accuracy of `laya-ft` per question next to Laya and Jev, for products whose name is in the calibration split and for the rest.
 
 Done when `results.parquet` has `laya-ft` answers for the 90_000 evaluation products.
 
