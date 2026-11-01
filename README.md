@@ -2,6 +2,41 @@
 
 *Innovation Day, 30 October 2026*
 
+## TL;DR
+
+Out of the box, Laya can't replace Jev.
+After 87 minutes of fine-tuning on a DGX Spark, it beats Jev on all three questions we asked.
+
+Both are decision models: instead of writing text, they pick an answer to a typed question and say how sure they are.
+Jev is hosted by TypeSafe AI in the US, Laya is open source and small enough to run on a laptop.
+We gave both of them 90_000 Open Food Facts products and asked three things about each one: its food group, whether it is ultra-processed, and its Nutri-Score.
+Open Food Facts already has the right answers, so nobody had to label anything.
+
+Laya as published got 52.9% of the food groups right.
+On the other two questions it did worse than always giving the most common answer.
+Fine-tuned on 10_000 other products kept out of the test, `laya-ft` got 89.2%, 97.6% and 81.5%, against Jev's 86.9%, 89.8% and 51.8%.
+The obvious worry was that it had just memorised product names, so we checked the products whose name it never saw: it is still ahead of Jev on those.
+Its confidence is also the most honest of the three.
+Jev, for comparison, is 95% sure of its food groups on average and right 87% of the time.
+
+There are catches.
+Laya reads only 512 tokens, and on the 798 products where that cuts off the nutrition values, `laya-ft` drops to 56.6% on Nutri-Score, below Jev's 61.2%.
+And on a laptop it is slow: 5 products a second on an M3 Pro, so a million products takes more than two days.
+The DGX Spark does 25 a second.
+Jev would cost about €33 per million products, and the whole experiment cost us $3.78 in Jev tokens.
+
+All numbers come from [results.ipynb](notebooks/results.ipynb), and [Results](#results) below has the details.
+Jev numbers stay inside Xebia until we have read TypeSafe's terms on publishing benchmarks.
+
+Besides the numbers, the day left us a harness that sends a table to any `/v1/systemone` model, in [harness/](harness/), and a way to fine-tune Laya on the DGX Spark, in [finetune/](finetune/README.md).
+The notebooks, in order:
+
+1. [data-sampling.ipynb](notebooks/data-sampling.ipynb) - how the 100_000 products were picked
+2. [systems-check.ipynb](notebooks/systems-check.ipynb) - both models pinned and their responses compared
+3. [harness-check.ipynb](notebooks/harness-check.ipynb) - a 20-product dry run per model
+4. [first-look.ipynb](notebooks/first-look.ipynb) - a first look at 1_024 products before the full runs
+5. [results.ipynb](notebooks/results.ipynb) - everything in the Results section
+
 ## The idea
 
 In September 2026 a new class of models appeared: System One models, also called decision models.
