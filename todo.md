@@ -52,9 +52,14 @@ Done when the 20-row dry run produces the same columns for both systems.
 
 ## 5. Runs (14:00, 1 h)
 
-- [ ] Laya on all 100_000 rows, on the DGX Spark (`just run laya` there, as [finetune/README.md](finetune/README.md) describes). Record wall-clock time and rows per second; the laptop's rows per second come from the first look.
-- [ ] Jev on all 100_000 rows. Record latency p50 and p95, and input tokens per row.
-- [ ] Count failed requests and rows with a truncated state, and keep them in the results instead of silently dropping them.
+- [x] Laya on all 100_000 rows, on the DGX Spark (`just run laya` there, as [finetune/README.md](finetune/README.md) describes). Record wall-clock time and rows per second; the laptop's rows per second come from the first look.
+  66 min on the Spark, 25.2 products per second, on 1 November; the laptop answers 5.0.
+- [x] Jev on all 100_000 rows. Record latency p50 and p95, and input tokens per row.
+  On the evaluation split: p50 162 ms, p95 238 ms, 888 input tokens per product on average (median 867).
+  2.9 hours of running, spread over 10.4 hours because the laptop slept; the harness's clock stops during sleep, so no latency includes it.
+- [x] Count failed requests and rows with a truncated state, and keep them in the results instead of silently dropping them.
+  No product failed for any system; 23 Jev products needed a second attempt.
+  Laya and `laya-ft` truncate 4_038 of the 270_000 evaluation rows: 2.8% of `food_group`, 0.9% of `nutriscore`, 0.8% of `ultra_processed`.
 
 Done when both result files have 100_000 products times 3 questions.
 
@@ -88,11 +93,16 @@ How it works is in [finetune/README.md](finetune/README.md).
 - [x] Export the calibration split as training data: `just ft-data`.
 - [x] Copy the training code and data to the DGX Spark, and check its GPU there.
 - [x] Smoke run on 256 products: 18.1 items per second, about 26 min per epoch.
-- [ ] Full run, `just finetune train --run v1`, in `tmux`. Record the time per epoch, items per second and peak memory from `run.json`.
-- [ ] Copy the repo to the Spark with `just spark-push spark almaz/laya-vs-jev`, then `uv sync --locked` and `just ft-install v1` there.
-- [ ] On the Spark, `just laya` and `just laya-ft`, then `just run laya` and `just run laya-ft full --split evaluation`.
-- [ ] On the laptop, `just spark-pull spark almaz/laya-vs-jev`, `just ft-install v1` and `just build`.
-- [ ] Compare the Spark's Laya answers with the laptop's on the 1_024 products of the first look.
+- [x] Full run, `just finetune train --run v1`, in `tmux`: 87 min in all, 21 min per epoch, 22.7 items per second; accuracy on the 1_500 held-out items from 0.444 to 0.878.
+- [ ] Read `v1/run.json`: the peak memory, the loss of each epoch, the fitted temperatures and the digest of the weights.
+- [x] Copy the repo to the Spark with `just spark-push spark almaz/laya-vs-jev`, then `uv sync --locked` and `just ft-install v1` there.
+  `v1` was trained in the older folder, so copy its archive into the repo first: `mkdir -p ~/almaz/laya-vs-jev/finetune/out && cp ~/almaz/laya-finetuning/out/v1.tar* ~/almaz/laya-vs-jev/finetune/out/`.
+- [x] On the Spark, `just laya-ft`, then `just run laya-ft full --split evaluation`: `laya-ft@c4b23c4`, 59 min, 25.1 products per second.
+- [x] On the Spark, `just laya`, then `just run laya`.
+- [x] On the laptop, `just spark-pull spark almaz/laya-vs-jev`, `just ft-install v1` and `just build`.
+- [x] Compare the Spark's Laya answers with the laptop's on the 1_024 products of the first look.
+  Same batches, so only the device differs: 18 `food_group`, 8 `ultra_processed` and 2 `nutriscore` answers change, and no probability moves by more than 0.09.
+  The laptop is right on 6 of the changed `food_group` answers and the Spark on 2; the same for `ultra_processed`.
 - [ ] Accuracy of `laya-ft` per question next to Laya and Jev, for products whose name is in the calibration split and for the rest.
 
 Done when `results.parquet` has `laya-ft` answers for the 90_000 evaluation products.

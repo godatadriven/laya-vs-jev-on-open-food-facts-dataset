@@ -53,7 +53,7 @@ Laya's documentation says its base checkpoints need fine-tuning on domain data, 
 - It is the same English checkpoint, fine-tuned on the 10_000 calibration products with Laya's own training code, on an NVIDIA DGX Spark: see [finetune/](finetune/README.md).
 - It is served like the published checkpoint, by the same `laya-serve`, and answers the same evaluation products with the same questions.
 - Its temperatures are fitted during training, on 1_500 calibration items held out from it.
-- 15.1% of the evaluation products have the exact name of a calibration product, so its accuracy is also reported for those products and for the rest apart.
+- 15.1% of the evaluation products have the name of a calibration product, ignoring case, so its accuracy is also reported for those products and for the rest apart.
 
 ### What is measured
 
@@ -120,7 +120,7 @@ Pinned on 31 October 2026:
 | --- | --- | --- |
 | Laya | `laya 0.4.18`, English checkpoint revision `7b928d8`, on MPS on the laptop and CUDA on the DGX Spark for the full runs | `/health` of the server |
 | Jev | `jev-1.14.0` | the `model` field of a `jev-latest` response; `jev-latest` was released on 22 October 2026 |
-| Laya fine-tuned | `laya 0.4.18, laya-ft@` and the first 7 characters of its weights' SHA-256, known after training | the weights the harness serves; a local checkpoint has no commit |
+| Laya fine-tuned | `laya 0.4.18, laya-ft@c4b23c4`, on CUDA on the DGX Spark | the first 7 characters of the SHA-256 of the weights the harness serves; a local checkpoint has no commit |
 
 Both answer [request.json](request.json) with the same response shape: the same answer types, field names and `usage` block.
 Differences that matter for the analysis:
@@ -155,7 +155,7 @@ On the laptop's Laya the same commands would take about 5.5 hours each.
 | Column | Holds |
 | --- | --- |
 | `id`, `split` | the sample row |
-| `system`, `model_version` | `laya 0.4.18, english@7b928d8`, `jev-1.14.0` or `laya 0.4.18, laya-ft@<digest>` |
+| `system`, `model_version` | `laya 0.4.18, english@7b928d8`, `jev-1.14.0` or `laya 0.4.18, laya-ft@c4b23c4` |
 | `question`, `answer` | the question, and its most likely option |
 | `probs` | the probability of every option |
 | `latency_ms` | per product; a Laya batch call's time is shared by its products, and in the full run it is the DGX Spark's |

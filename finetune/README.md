@@ -53,8 +53,9 @@ A "step" in the log is one pass of 8 items, so an epoch has 3_563 of them.
 
 The before-and-after table shows whether training worked; it is not a result, for two reasons:
 
-- The temperatures are fitted on the same 1_500 items the table scores, which flatters the calibration numbers (ECE and Brier).
+- The temperatures are fitted on the same 1_500 items the table scores, which flatters every number in it but accuracy: loss, ECE, Brier and mean confidence.
   Accuracy is still fair: a temperature never changes which answer comes out on top.
+  This is why Laya titles the table "in-sample calibration slice; not held-out": the items are held out from training, not from the temperatures.
 - The items are held out one by one, not product by product, with a fixed seed.
   A product can have its `food_group` in training and its `nutriscore` held out, so the model may have read its text already, which makes the "after" score somewhat optimistic.
 
@@ -93,11 +94,11 @@ Everything long goes in `tmux`, so it survives a dropped connection: `tmux new -
 
 ```sh
 just finetune train --run smoke --limit 256 --epochs 1  # every step on 256 products, and the time per epoch
-just finetune train --run v1                            # the full run, about 1 h 45 min on the office Spark
+just finetune train --run v1                            # the full run, 87 min on the office Spark
 just ft-install v1                                      # unpacks it to data/checkpoints/laya-ft, for `just laya-ft`
 ```
 
-The smoke run predicts 26 min per epoch on the office Spark, against about 2 h 15 min on the M3 Pro.
+The full run took 21 min per epoch on the office Spark, where the smoke run had predicted 26; the M3 Pro would take about 2 h 15 min per epoch.
 
 Every run writes these, and refuses to start if `finetune/out/<run>/` already exists:
 
@@ -107,10 +108,34 @@ Every run writes these, and refuses to start if `finetune/out/<run>/` already ex
 | `finetune/out/<run>/train_report.json` | Laya's before-and-after on the held-out items, and how the temperatures were fitted |
 | `finetune/out/<run>/run.json` | timings, items per second, versions, GPU and peak memory, the settings, the data manifest and the digest of the weights |
 | `finetune/out/<run>/train.log` | everything the run printed |
-| `finetune/out/<run>.tar`, `.tar.sha256` | all of the above but `checkpoint_latest/`, about 0.85 GB |
+| `finetune/out/<run>.tar`, `.tar.sha256` | all of the above but `checkpoint_latest/`, about 0.8 GB |
 
 `ft-install` refuses an archive that does not match its `.sha256`, a checkpoint trained on other questions than `request.json`, and a second checkpoint over the first.
 A local checkpoint has no commit, so the harness pins its runs to the digest of the weights: `laya 0.4.18, laya-ft@<first 7 characters>`.
+
+### The v1 run
+
+`v1` is the checkpoint the experiment serves, trained on 31 October with the defaults above.
+
+- 87 min in all, of which the training loop took 84 min: 21 min per epoch, at 22.7 items per second.
+- `v1.tar` is 0.8 GB.
+- The harness answers with it as `laya 0.4.18, laya-ft@c4b23c4`.
+
+The table at the end of its `train.log`, on the 1_500 items held out from training:
+
+| Metric | Before | After | Delta |
+| --- | --- | --- | --- |
+| Accuracy | 0.4440 | 0.8780 | +0.4340 |
+| Loss | 1.6066 | 0.3636 | -1.2430 |
+| ECE | 0.1547 | 0.0322 | -0.1225 |
+| Brier (multi-class) | 0.7094 | 0.1821 | -0.5273 |
+| Brier (top-1) | 0.2374 | 0.0837 | -0.1537 |
+| Mean confidence | 0.5947 | 0.8918 | +0.2971 |
+
+- The training worked: on items it never trained on, accuracy went from 0.444 to 0.878.
+- The three questions are mixed in one number, about 500 items each; accuracy per question comes from the evaluation split.
+- The calibration numbers after training are a best case: the temperatures were fitted on these same items.
+- The accuracy is somewhat optimistic: some of these products were trained on with another question.
 
 ## 4. On the Spark: measure
 
@@ -126,6 +151,7 @@ just run laya-ft full --split evaluation  # the 90_000 evaluation products
 - Both servers listen on the Spark's own localhost only.
 - A stopped run continues where it stopped: run the same command again.
 - The two runs can go side by side: they share the GPU, but the Spark's speed is not a reported number.
+- `laya-ft` alone answers about 25 products per second there, so the 90_000 evaluation products take about an hour.
 - The laptop's speed is measured on the laptop, in the first look: 5.0 products per second on 1_024 products.
 
 ## 5. Back on the laptop: the results
