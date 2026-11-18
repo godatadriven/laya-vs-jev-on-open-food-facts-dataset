@@ -2,6 +2,8 @@
 
 *Innovation Day, 30 October 2026*
 
+Xebia Blog: [A beer bratwurst is not a drink: renting vs owning a decision model](https://xebia.com/blog/a-beer-bratwurst-is-not-a-drink-renting-vs-owning-a-decision-model1/)
+
 ## TL;DR
 
 Out of the box, Laya can't replace Jev.
@@ -100,7 +102,6 @@ Laya's documentation says its base checkpoints need fine-tuning on domain data, 
 - Tuning the fine-tuning: `laya-ft` is one run with Laya's published recipe, not a search over settings.
 - The multilingual checkpoint and non-English products.
 - Any cloud, Kubernetes or table-format work: that is the Innovation Project, not the day.
-- Publishing Jev numbers outside Xebia until TypeSafe's terms on benchmarks are read.
 
 ## Predictions, written before the runs
 
@@ -204,7 +205,6 @@ Its numbers are not results: those come from the evaluation split.
 
 [results.ipynb](notebooks/results.ipynb) computes every number below from the 90_000 products of the evaluation split; the calibration split only fits Laya's temperature.
 No product failed, so every accuracy is over all 90_000 of them.
-The Jev numbers stay inside Xebia until TypeSafe's terms on publishing benchmarks have been read.
 
 | Question | Majority baseline | Laya | `laya-ft` | Jev |
 | --- | --- | --- | --- | --- |

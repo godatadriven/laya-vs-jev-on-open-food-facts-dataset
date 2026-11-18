@@ -11,7 +11,7 @@
             "alias": "open_food_fact",
             "type": "file",
             "path": "/Users/almaz/Desktop/PROJECTS/Xebia/innovation-days/2026-10-30/open_food_fact.duckdb",
-            "attached": true
+            "attached": false
         }
     ],
     "duckdb.defaultDatabase": "open_food_fact"

@@ -34,7 +34,7 @@ If a level-1 group has fewer than 30 rows in the evaluation split, say so in the
 - [x] Check that Laya runs on MPS and not on CPU, and send one warm-up request: the first MPS call pays about 13 s of kernel compilation.
 - [x] Send `request.json` to both systems and compare the shape of the two responses.
 - [x] Find out which concrete version `jev-latest` resolves to, pin it, and write it down.
-- [ ] Read TypeSafe's terms on publishing benchmarks. The answer decides whether Jev numbers can leave Xebia.
+- [x] Read TypeSafe's terms on publishing benchmarks. Neither the Terms of Use nor the Acceptable Use Policy restricts it (checked 11 November 2026), so Jev numbers can be published.
 
 Done when both systems answer the demo request and both versions are recorded.
 
